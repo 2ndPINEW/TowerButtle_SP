@@ -24,7 +24,7 @@
     </v-card>
 
     <!--ゲーム諸注意カード-->
-    <v-card v-if="!isGaming&&isSetServerIP" class="ma-4">
+    <v-card v-if="!isGaming&&isSetServerIP&&!isBreaking" class="ma-4">
       <v-toolbar color="red" dark flat>
         <v-toolbar-title>ゲームをプレイするにあたって</v-toolbar-title>
       </v-toolbar>
@@ -94,7 +94,7 @@
     </div>-->
 
     <!--ゲームエントリーカード-->
-    <v-card v-if="!isGaming&&isSetServerIP&&!isSetNextGame" class="ma-4">
+    <v-card v-if="!isGaming&&isSetServerIP&&!isSetNextGame&&!isBreaking" class="ma-4">
       <v-toolbar color="primary" dark flat>
         <v-toolbar-title>ゲームエントリー</v-toolbar-title>
       </v-toolbar>
@@ -154,7 +154,7 @@
     <div class="text-center">
       <v-btn
         width="90%"
-        height="500"
+        height="700"
         class="ma-4"
         color="primary"
         v-if="isGaming"
@@ -164,6 +164,39 @@
       </v-btn>
     </div>
 
+    <!--休憩設定カード-->
+    <v-card v-if="isSetServerIP&&isBreaking" class="ma-4">
+      <v-toolbar color="primary" dark flat>
+        <v-toolbar-title>休憩設定</v-toolbar-title>
+      </v-toolbar>
+      <form>
+        <v-text-field
+            v-model="breakMessage"
+            class="mx-4"
+            label="メッセージ"
+            :counter="10"
+            :rules="nameRules"
+            required
+        ></v-text-field>
+        <v-layout justify-end>
+          <v-btn class="ma-4 mx-0" @click="EndBreak" color="primary">休憩終了</v-btn>
+          <v-btn class="ma-4" @click="UpdateMessage" color="primary">更新</v-btn>
+        </v-layout>
+      </form>
+    </v-card>
+
+    <!--クレジット-->
+      <v-card class="ma-4" v-if="isSetServerIP">
+        <v-toolbar color="primary" dark flat>
+          <v-toolbar-title>クレジット</v-toolbar-title>
+        </v-toolbar>
+        <div class="pa-2" v-for="n in credit">
+            <h1 style="font-size: 1rem" class="mx-4">使用シーン: {{ n.title }}</h1>
+            <div style="font-size: 1rem" class="mx-4">タイトル: {{ n.name }}</div>
+            <div style="font-size: 1rem" class="mx-4">{{ n.licence }}</div>
+            <v-divider />
+        </div>
+      </v-card>
   </div>
 </template>
 
@@ -187,7 +220,10 @@ export default {
       GameMode: "",
       isGaming: false,
       isSetNextGame: false,
+      isBreaking: false,
       isSetServerIP: false,
+      fetchGameStateObj: null,
+      breakMessage: "",
       nameRules: [
         v => !!v || '入力必須項目です!',
         v => v.length <= 10 || '10文字以下でおなしゃす!',
@@ -200,7 +236,16 @@ export default {
       ModeList: [
         { displayName: "VSバトル", queryName: "VS"},
         { displayName: "タワーバトル", queryName: "TOWER"},
+        { displayName: "休憩", queryName: "Break"},
         /*{ displayName: "みんなでわいわい", queryName: "WaiWai"}*/
+      ],
+      credit:[
+        {title: "落下音", name: "ポップモーション13", licence: "© OtoLogic 2015"},
+        {title: "スタート音", name: "競技用ゴング01", licence: "© OtoLogic 2014-2015"},
+        {title: "オブジェクト生成音", name: "ポップモーション20", licence: "© OtoLogic 2015"},
+        {title: "爆発音", name: "衝撃04", licence: "© OtoLogic 2013-2015"},
+        {title: "BGM", name: "のんびりタイム", licence: "作曲: いまたく 様"},
+
       ],
       list: [
         {title: "抵抗君", img: "/img/Teikou", descliption: "体重: 20kg, 電気を流れにくくするために使うすごいやつ"},
@@ -232,11 +277,11 @@ export default {
       let url = "http://" + this.ServerIP + ":9000/200.OK";
       let self = this;
       axios
-        .get(url, { timeout : 5000 })
+        .get(url, { timeout : 1500 })
           .then(function(response){
             self.isSetServerIP = true;
             self.fetchGameState();
-            setInterval(function() {self.fetchGameState();}, 5000);
+            self.fetchGameStateObj = setInterval(function() {self.fetchGameState();}, 3000);
           })
           .catch(error => {
             window.alert(error)
@@ -248,7 +293,7 @@ export default {
       let url = "http://" + this.ServerIP + ":9000/FallObject";
       let self = this;
       axios
-        .get(url, { timeout : 5000 })
+        .get(url, { timeout : 1500 })
           .then(function(response){
           })
           .catch(error => {
@@ -260,7 +305,7 @@ export default {
       let self = this;
       var url = "http://" + this.ServerIP + ":9000/isGaming";
       axios
-        .get(url, { timeout : 5000 })
+        .get(url, { timeout : 1500 })
           .then(function(response){
             if(response.data == true){
               self.isGaming = true;
@@ -271,12 +316,13 @@ export default {
             }
           })
           .catch(error => {
+            clearInterval(self.fetchGameStateObj);
             self.isSetServerIP = false;
-            window.alert(error)
+            //window.alert(error)
         });
       url = "http://" + this.ServerIP + ":9000/isSetNextGame";
       axios
-        .get(url, { timeout : 5000 })
+        .get(url, { timeout : 1500 })
           .then(function(response){
             if(response.data == true){
               self.isSetNextGame = true;
@@ -286,9 +332,64 @@ export default {
             }
           })
           .catch(error => {
+            clearInterval(self.fetchGameStateObj);
             self.isSetServerIP = false;
-            window.alert(error);
+            //window.alert(error);
         });
+      url = "http://" + this.ServerIP + ":9000/isBreaking";
+      axios
+        .get(url, { timeout : 1500 })
+          .then(function(response){
+            if(response.data == true){
+              self.isBreaking = true;
+            }
+            if(response.data == false){
+              self.isBreaking = false;
+            }
+          })
+          .catch(error => {
+            clearInterval(self.fetchGameStateObj);
+            self.isSetServerIP = false;
+            //window.alert(error);
+        });
+    },
+    EndBreak: function(){
+      var url = "http://" + this.ServerIP + ":9000/StopBreak";
+      axios
+        .get(url, { timeout : 1500 })
+          .then(function(response){
+            self.isbreaking = false;
+          })
+          .catch(error => {
+            window.alert(error);
+            //window.alert(error);
+        });
+    },
+    UpdateMessage: function(){
+      this.isLoading = true;
+      let url = "http://" + this.ServerIP + ":9000/UpdateMessage";
+      let self = this;
+      let QueryString = "";
+      if(this.breakMessage==""){
+        window.alert("入力していない項目があります");
+        this.isLoading = false;
+        return 0;
+      }
+      if(this.breakMessage.indexOf('?')!=-1||this.breakMessage.indexOf('&')!=-1||this.breakMessage.indexOf('=')!=-1){
+        window.alert("メッセージに使用できない文字があります");
+        this.isLoading = false;
+        return 0;
+      }
+      QueryString += "?message=" + this.breakMessage;
+      console.log(url+QueryString);
+      axios
+        .get(url+QueryString, { timeout : 1500 })
+          .then(function(response){
+          })
+          .catch(error => {
+            window.alert(error)
+        });
+      this.isLoading = false;
     },
     Entry: function(){
       this.isLoading = true;
@@ -311,11 +412,15 @@ export default {
           this.isLoading = false;
           return 0;
         }
-        QueryString += "?GameMode="+this.GameMode;
+        QueryString += "?GameMode=" + this.GameMode;
         QueryString += "&P1Name=" + this.P1Name;
         QueryString += "&P2Name=" + this.P2Name;
         QueryString += "&P1Camp=" + this.P1Camp;
         QueryString += "&P2Camp=" + this.P2Camp;
+      }
+      else if(this.GameMode=="Break"){
+        self.isbreaking = true;
+        QueryString += "?GameMode=Break"
       }
       else{
         window.alert("モードが不正");
@@ -324,7 +429,7 @@ export default {
       }
       console.log(url+QueryString);
       axios
-        .get(url+QueryString, { timeout : 5000 })
+        .get(url+QueryString, { timeout : 1500 })
           .then(function(response){
             self.isSetNextGame = true;
           })
