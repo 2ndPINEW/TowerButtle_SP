@@ -236,8 +236,8 @@ export default {
       ModeList: [
         { displayName: "VSバトル", queryName: "VS"},
         { displayName: "タワーバトル", queryName: "TOWER"},
-        { displayName: "休憩", queryName: "Break"},
-        /*{ displayName: "みんなでわいわい", queryName: "WaiWai"}*/
+        { displayName: "みんなでわいわい", queryName: "WAIWAI"},
+        { displayName: "休憩", queryName: "Break"}
       ],
       credit:[
         {title: "落下音", name: "ポップモーション13", licence: "© OtoLogic 2015"},
@@ -417,6 +417,10 @@ export default {
         QueryString += "&P2Name=" + this.P2Name;
         QueryString += "&P1Camp=" + this.P1Camp;
         QueryString += "&P2Camp=" + this.P2Camp;
+      }
+      else if(this.GameMode=="WAIWAI"){
+        self.isbreaking = true;
+        QueryString += "?GameMode=WAIWAI"
       }
       else if(this.GameMode=="Break"){
         self.isbreaking = true;
