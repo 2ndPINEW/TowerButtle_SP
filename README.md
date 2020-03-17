@@ -1,4 +1,5 @@
-# vuetifyhelloworld
+# TowerButtle_SP
+タワーバトル操作用Webアプリ
 
 ## Project setup
 ```
